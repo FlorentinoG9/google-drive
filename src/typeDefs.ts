@@ -1,4 +1,4 @@
-export type CallbackDoc = {
+export interface CallbackDoc {
   downloadUrl?: string
   uploadState?: string
   description: string
@@ -18,21 +18,21 @@ export type CallbackDoc = {
   url: string
 }
 
-export type PickerCallback = {
-  action: string
+export interface PickerCallback {
+  action: 'picked' | 'cancel' | 'loaded'
   docs: CallbackDoc[]
 }
 
-export type authResult =  {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  scope: string;
-  authuser: string;
-  prompt: string;
+export interface AuthResult {
+  access_token: string
+  token_type: 'Bearer'
+  expires_in: number
+  scope: string
+  authUser: string
+  prompt: string
 }
 
-type ViewIdOptions =
+export type ViewIdOptions =
   | 'DOCS'
   | 'DOCS_IMAGES'
   | 'DOCS_IMAGES_AND_VIDEOS'
@@ -45,7 +45,7 @@ type ViewIdOptions =
   | 'SPREADSHEETS'
   | 'PRESENTATIONS'
 
-export type PickerConfiguration = {
+export interface PickerConfiguration {
   clientId: string
   developerKey: string
   viewId?: ViewIdOptions
@@ -62,16 +62,69 @@ export type PickerConfiguration = {
   showUploadView?: boolean
   showUploadFolders?: boolean
   setParentFolder?: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  customViews?: any[]
+  customViews?: GooglePickerView[]
   locale?: string
   customScopes?: string[]
-  callbackFunction: (data: PickerCallback) => any
+  callbackFunction: (data: PickerCallback) => void
+}
+
+export interface GooglePickerView {
+  setIncludeFolders: (include: boolean) => GooglePickerView
+  setMimeTypes: (mimeTypes: string) => GooglePickerView
+  setSelectFolderEnabled: (enabled: boolean) => GooglePickerView
+  setParent: (parentId: string) => GooglePickerView
+}
+
+export interface GooglePickerBuilder {
+  addView: (view: GooglePickerView) => GooglePickerBuilder
+  setAppId: (appId: string) => GooglePickerBuilder
+  setOAuthToken: (token: string) => GooglePickerBuilder
+  setDeveloperKey: (key: string) => GooglePickerBuilder
+  setLocale: (locale: string) => GooglePickerBuilder
+  setCallback: (callback: (data: PickerCallback) => void) => GooglePickerBuilder
+  setOrigin: (origin: string) => GooglePickerBuilder
+  enableFeature: (feature: string) => GooglePickerBuilder
+  build: () => GooglePicker
+}
+
+export interface GooglePicker {
+  setVisible: (visible: boolean) => void
 }
 
 export const defaultConfiguration: PickerConfiguration = {
   clientId: '',
   developerKey: '',
   viewId: 'DOCS',
-  callbackFunction: () => null,
+  callbackFunction: () => undefined,
+}
+
+declare global {
+  interface Window {
+    gapi: {
+      load: (api: string, options?: { callback: () => void }) => void
+    }
+    google: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string
+            scope: string
+            callback: (response: AuthResult) => void
+          }) => {
+            requestAccessToken: () => void
+          }
+        }
+      }
+      picker: {
+        Feature: {
+          MULTISELECT_ENABLED: string
+          SUPPORT_DRIVES: string
+        }
+        ViewId: Record<ViewIdOptions, string>
+        DocsView: new (viewId?: string) => GooglePickerView
+        DocsUploadView: new () => GooglePickerView
+        PickerBuilder: new () => GooglePickerBuilder
+      }
+    }
+  }
 }
