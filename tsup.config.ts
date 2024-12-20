@@ -7,5 +7,4 @@ export default defineConfig({
   shims: true,
   skipNodeModulesBundle: true,
   clean: true,
-  external: ['react', 'react-dom'],
 })
