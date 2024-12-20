@@ -1,2 +1,2 @@
-export { GoogleDrivePicker } from './picker'
-export type { GoogleCredentials, GoogleScopes as GoogleScope, OptionalConfig, ViewId, ViewMimeType } from './types'
+export { GooglePickerLoader } from './picker'
+export type { GoogleConfig, GoogleCredentials, GoogleScope, ViewId, ViewMimeType } from './types'
