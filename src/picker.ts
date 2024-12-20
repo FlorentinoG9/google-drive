@@ -20,6 +20,7 @@ class GoogleService {
   private accessToken: string | undefined
   private pickerInited = false
   private gisInited = false
+  private originalTokenCallback: ((response: any) => void) | undefined
 
   constructor(clientId: GoogleCredentials['clientId'], developerKey: GoogleCredentials['developerKey'], appId: GoogleCredentials['appId'], config?: GoogleConfig) {
     try {
@@ -82,12 +83,13 @@ class GoogleService {
   private gisLoaded() {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: this.getCredentials().clientId,
-      scope: 'https://www.googleapis.com/auth/drive.readonly',
+      scope: this.getScopes().join(' '),
       callback: (tokenResponse: any) => {
         if (tokenResponse.error !== undefined) {
           throw new Error(tokenResponse.error)
         }
         this.accessToken = tokenResponse.access_token
+        this.originalTokenCallback = client.callback
       },
     })
 
@@ -104,7 +106,7 @@ class GoogleService {
   }
 
   getScopes() {
-    return this.config?.scopes ?? ['https://www.googleapis.com/auth/drive.file.readonly']
+    return this.config?.scopes ?? ['https://www.googleapis.com/auth/drive.readonly']
   }
 
   getAccessToken() {
@@ -133,6 +135,10 @@ class GoogleService {
 
   protected setTokenClient(client: any) {
     this.tokenClient = client
+  }
+
+  protected getOriginalTokenCallback() {
+    return this.originalTokenCallback
   }
 
   getPickerCallback() {
@@ -167,14 +173,23 @@ class GooglePickerLoader extends GoogleService {
     }
 
     if (!this.getAccessToken()) {
-      this.getTokenClient().callback = (response: any) => {
+      const originalCallback = this.getOriginalTokenCallback()
+      const tokenClient = this.getTokenClient()
+
+      tokenClient.callback = (response: any) => {
         if (response.error !== undefined) {
           throw new Error(response.error)
         }
         this.setAccessToken(response.access_token)
+
+        if (originalCallback) {
+          originalCallback(response)
+        }
+
         showPicker()
       }
-      this.getTokenClient().requestAccessToken({ prompt: 'consent' })
+
+      tokenClient.requestAccessToken({ prompt: 'consent' })
     }
     else {
       showPicker()
