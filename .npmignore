@@ -1,7 +1,11 @@
-demo
-src
-.env
+node_modules
+.env*
+dist
+.DS_Store
+.changeset
 .vscode
-.tsconfig.json
 .eslintrc.json
 .prettierrc.json
+.tsconfig.json
+tsup.config.ts
+eslint.config.mjs
